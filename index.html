@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP / みんなで1000万</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    background: #fdf6f9;
+    color: #3a2a32;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container { max-width: 640px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    padding: 36px 0 28px;
+  }
+  .header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: #c47fa0;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2e1a26;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .header .sub {
+    font-size: 12px;
+    color: #b089a0;
+    letter-spacing: 0.06em;
+  }
+
+  .counter-card {
+    background: linear-gradient(135deg, #f7c5dc, #e8a4c4, #d97db5);
+    border-radius: 24px;
+    padding: 36px 24px 28px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 32px rgba(200, 80, 140, 0.18);
+    position: relative;
+    overflow: hidden;
+  }
+  .counter-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+  }
+  .counter-card::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .counter-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    position: relative; z-index: 1;
+  }
+  .counter-number {
+    font-size: clamp(44px, 11vw, 72px);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    position: relative; z-index: 1;
+    text-shadow: 0 2px 12px rgba(180, 60, 120, 0.3);
+    transition: all 0.6s ease;
+  }
+  .counter-goal {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 8px;
+    position: relative; z-index: 1;
+  }
+
+  .progress-wrap { margin: 20px 0 20px; }
+  .progress-bar-bg {
+    background: #f0dbe8;
+    border-radius: 100px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, #e8a4c4, #d63f8c);
+    transition: width 0.8s ease;
+    min-width: 3px;
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #c09ab0;
+  }
+
+  .total-bar {
+    background: #fff;
+    border: 1.5px solid #f0d0e4;
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(200,100,160,0.06);
+  }
+  .total-bar .label { font-size: 13px; color: #b089a0; }
+  .total-bar .value { font-size: 22px; font-weight: 800; color: #d63f8c; }
+
+  .form-card {
+    background: #fff;
+    border: 1.5px solid #f0d0e4;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(200,100,160,0.06);
+  }
+  .form-card h2 {
+    font-size: 13px;
+    color: #c47fa0;
+    margin-bottom: 18px;
+    letter-spacing: 0.08em;
+  }
+  .form-row { margin-bottom: 14px; }
+  .form-row label {
+    display: block;
+    font-size: 12px;
+    color: #b089a0;
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+  .form-row input {
+    width: 100%;
+    background: #fdf6f9;
+    border: 1.5px solid #f0d0e4;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #3a2a32;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .form-row input:focus {
+    border-color: #d97db5;
+    box-shadow: 0 0 0 3px rgba(217,125,181,0.12);
+  }
+  .form-row input::placeholder { color: #d4b0c8; }
+
+  .submit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #e8a4c4, #d63f8c);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.06em;
+    box-shadow: 0 4px 16px rgba(214,63,140,0.28);
+  }
+  .submit-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .msg {
+    text-align: center;
+    font-size: 13px;
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+  }
+  .msg.success { background: #fce8f2; color: #d63f8c; display: block; }
+  .msg.error { background: #fde8e8; color: #c0392b; display: block; }
+
+  .history-section h2 {
+    font-size: 13px;
+    color: #c47fa0;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+    margin-top: 4px;
+  }
+  .history-list { list-style: none; }
+  .history-item {
+    background: #fff;
+    border: 1.5px solid #f0d0e4;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(200,100,160,0.05);
+    animation: fadeIn 0.4s ease;
+  }
+  .delete-btn {
+    background: none;
+    border: 1.5px solid #f0d0e4;
+    border-radius: 8px;
+    color: #d4b0c8;
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .delete-btn:hover { background: #fce8f2; border-color: #d97db5; color: #d63f8c; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .history-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f7c5dc, #d63f8c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(214,63,140,0.2);
+  }
+  .history-info { flex: 1; min-width: 0; }
+  .history-name { font-size: 13px; font-weight: 700; color: #3a2a32; }
+  .history-content {
+    font-size: 12px;
+    color: #b089a0;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .history-date { font-size: 11px; color: #d4b0c8; margin-top: 2px; }
+  .history-amount {
+    font-size: 16px;
+    font-weight: 800;
+    color: #d63f8c;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #c09ab0;
+    font-size: 14px;
+    padding: 40px 0;
+    line-height: 2;
+  }
+  .loading {
+    text-align: center;
+    color: #c09ab0;
+    font-size: 13px;
+    padding: 20px;
+  }
+
+  .realtime-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ccc;
+    margin-left: 6px;
+    vertical-align: middle;
+    transition: background 0.3s;
+  }
+  .realtime-dot.connected { background: #4cd964; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="eyebrow">Monetize The Code Premium</div>
+    <h1>マネプレ 1000万チャレンジ</h1>
+    <div class="sub">みんなで登る、団体戦 <span class="realtime-dot" id="realtimeDot" title="リアルタイム接続状態"></span></div>
+    <div class="sub" style="margin-top:6px; color:#d97db5; font-size:11px; letter-spacing:0.08em;">GMS：金額の多寡は関係ない</div>
+    <div class="sub" style="margin-top:8px; color:#c09ab0; font-size:10px; letter-spacing:0.03em; line-height:1.7;">※厳密には売上とはサービスを提供したら立ちますが、<br>マネプレでは「成約金額」を入れることとします。</div>
+  </div>
+
+  <div class="counter-card">
+    <div class="counter-label">残り金額</div>
+    <div class="counter-number" id="counterNumber">¥10,000,000</div>
+    <div class="counter-goal">目標 ¥10,000,000</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="progress-labels">
+      <span>¥0</span>
+      <span id="progressPct">0%</span>
+      <span>¥1,000万</span>
+    </div>
+  </div>
+
+  <div class="total-bar">
+    <span class="label">累計達成額</span>
+    <span class="value" id="totalAmount">¥0</span>
+  </div>
+
+  <div class="form-card">
+    <h2>売上を追加する</h2>
+    <div class="form-row">
+      <label>名前</label>
+      <input type="text" id="inputName" placeholder="例：みずたま" maxlength="20" list="nameList" autocomplete="off">
+      <datalist id="nameList"></datalist>
+    </div>
+    <div class="form-row">
+      <label>内容</label>
+      <input type="text" id="inputContent" placeholder="例：子宮温泉フロントセミナー" maxlength="50" list="contentList" autocomplete="off">
+      <datalist id="contentList"></datalist>
+    </div>
+    <div class="form-row">
+      <label>金額（円）</label>
+      <input type="number" id="inputAmount" placeholder="例：50000" min="1" max="10000000">
+    </div>
+    <button class="submit-btn" id="submitBtn" onclick="addEntry()">追加する</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="history-section">
+    <h2>積み上げ記録</h2>
+    <div id="historyList" class="loading">読み込み中...</div>
+  </div>
+
+</div>
+
+<script>
+// =============================================
+// Supabase 設定
+// Supabase ダッシュボード > Project Settings > API から取得してください
+// =============================================
+const SUPABASE_URL = 'https://yfixzwuwmoiysgtqwjcl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmaXh6d3V3bW9peXNndHF3amNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTI4NDksImV4cCI6MjA5MDk4ODg0OX0.p8SSO1bO7fvDnbtwbscqeC04x7ck8RMjpu_VpZBkYx4';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const GOAL = 10000000;
+
+// =============================================
+// ユーティリティ
+// =============================================
+function formatDate(iso) {
+  const d = new Date(iso);
+  const mo = d.getMonth() + 1;
+  const da = d.getDate();
+  const h = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${mo}/${da} ${h}:${mi}`;
+}
+
+function getInitial(name) {
+  return name.charAt(0) || '？';
+}
+
+function escHtml(str) {
+  return str
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// =============================================
+// Supabase CRUD
+// =============================================
+async function loadEntries() {
+  const { data, error } = await supabase
+    .from('entries')
+    .select('*')
+    .order('date', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+async function insertEntry(entry) {
+  const { error } = await supabase
+    .from('entries')
+    .insert([entry]);
+  if (error) throw error;
+}
+
+// =============================================
+// UI 更新
+// =============================================
+function updateDatalist(entries) {
+  const names = [...new Set(entries.map(e => e.name))];
+  const contents = [...new Set(entries.map(e => e.content))];
+
+  const nameList = document.getElementById('nameList');
+  nameList.innerHTML = names.map(n => `<option value="${escHtml(n)}">`).join('');
+
+  const contentList = document.getElementById('contentList');
+  contentList.innerHTML = contents.map(c => `<option value="${escHtml(c)}">`).join('');
+}
+
+function updateUI(entries) {
+  updateDatalist(entries);
+  const total = entries.reduce((s, e) => s + e.amount, 0);
+  const remaining = Math.max(0, GOAL - total);
+  const pct = Math.min(100, (total / GOAL) * 100);
+
+  document.getElementById('counterNumber').textContent = `¥${remaining.toLocaleString()}`;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct.toFixed(1) + '%';
+  document.getElementById('totalAmount').textContent = `¥${total.toLocaleString()}`;
+
+  const listEl = document.getElementById('historyList');
+  if (entries.length === 0) {
+    listEl.innerHTML = '<div class="empty-state">まだ売上がありません。<br>最初の一件を追加しましょう！</div>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+  const ul = document.createElement('ul');
+  ul.className = 'history-list';
+  entries.forEach(e => {
+    const li = document.createElement('li');
+    li.className = 'history-item';
+    li.innerHTML = `
+      <div class="history-avatar">${getInitial(e.name)}</div>
+      <div class="history-info">
+        <div class="history-name">${escHtml(e.name)}</div>
+        <div class="history-content">${escHtml(e.content)}</div>
+        <div class="history-date">${formatDate(e.date)}</div>
+      </div>
+      <div class="history-amount">+¥${Number(e.amount).toLocaleString()}</div>
+      <button class="delete-btn" onclick="deleteEntry('${escHtml(e.id)}')">削除</button>
+    `;
+    ul.appendChild(li);
+  });
+  listEl.appendChild(ul);
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  setTimeout(() => { el.className = 'msg'; }, 3000);
+}
+
+// =============================================
+// 追加 / 削除
+// =============================================
+async function addEntry() {
+  const name = document.getElementById('inputName').value.trim();
+  const content = document.getElementById('inputContent').value.trim();
+  const amount = parseInt(document.getElementById('inputAmount').value);
+
+  if (!name) { showMsg('名前を入力してください', 'error'); return; }
+  if (!content) { showMsg('内容を入力してください', 'error'); return; }
+  if (!amount || amount <= 0) { showMsg('正しい金額を入力してください', 'error'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '追加中...';
+
+  try {
+    await insertEntry({ name, content, amount, date: new Date().toISOString() });
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputContent').value = '';
+    document.getElementById('inputAmount').value = '';
+    showMsg('追加しました！', 'success');
+    // リアルタイム購読が UI を自動更新するが、念のため即時反映
+    const entries = await loadEntries();
+    updateUI(entries);
+  } catch (e) {
+    console.error(e);
+    showMsg('エラーが発生しました', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '追加する';
+  }
+}
+
+async function deleteEntry(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  try {
+    const { error } = await supabase
+      .from('entries')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    const entries = await loadEntries();
+    updateUI(entries);
+  } catch (e) {
+    console.error(e);
+    alert('削除に失敗しました');
+  }
+}
+
+// =============================================
+// リアルタイム購読（他ユーザーの更新を自動反映）
+// =============================================
+function setupRealtime() {
+  const dot = document.getElementById('realtimeDot');
+  supabase
+    .channel('entries-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'entries' }, async () => {
+      const entries = await loadEntries();
+      updateUI(entries);
+    })
+    .subscribe(status => {
+      dot.classList.toggle('connected', status === 'SUBSCRIBED');
+    });
+}
+
+// =============================================
+// 初期化
+// =============================================
+(async () => {
+  try {
+    const entries = await loadEntries();
+    updateUI(entries);
+  } catch (e) {
+    document.getElementById('historyList').innerHTML =
+      '<div class="empty-state">データ取得に失敗しました。<br>Supabaseの設定を確認してください。</div>';
+  }
+  setupRealtime();
+})();
+</script>
+</body>
+</html>
