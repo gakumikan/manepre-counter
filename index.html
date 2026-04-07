@@ -539,13 +539,20 @@ function setupRealtime() {
 // =============================================
 // 初期化
 // =============================================
+const dbg = (msg) => { document.getElementById('historyList').innerHTML = '<div style="color:red;padding:10px;">' + msg + '</div>'; };
+dbg('STEP1: script started');
+try {
+  dbg('STEP2: creating client... supabase type=' + typeof window.supabase + ', createClient=' + typeof window.supabase?.createClient);
+} catch(e) { dbg('STEP2 ERR: ' + e.message); }
+
 (async () => {
   try {
+    dbg('STEP3: calling loadEntries...');
     const entries = await loadEntries();
+    dbg('STEP4: got ' + entries.length + ' entries, calling updateUI...');
     updateUI(entries);
   } catch (e) {
-    document.getElementById('historyList').innerHTML =
-      '<div class="empty-state">データ取得に失敗しました。<br>Supabaseの設定を確認してください。</div>';
+    dbg('STEP5 ERROR: ' + e.message + ' | ' + e.stack?.substring(0, 200));
   }
   setupRealtime();
 })();
