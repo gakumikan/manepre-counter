@@ -355,9 +355,14 @@
 </div>
 
 <script>
+// エラーキャッチ（デバッグ用）
+window.onerror = function(msg, src, line, col, err) {
+  const el = document.getElementById('historyList');
+  if (el) el.innerHTML = '<div style="color:red;padding:10px;">JS Error: ' + msg + ' (line ' + line + ')</div>';
+  return false;
+};
 // =============================================
 // Supabase 設定
-// Supabase ダッシュボード > Project Settings > API から取得してください
 // =============================================
 const SUPABASE_URL = 'https://yfixzwuwmoiysgtqwjcl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmaXh6d3V3bW9peXNndHF3amNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTI4NDksImV4cCI6MjA5MDk4ODg0OX0.p8SSO1bO7fvDnbtwbscqeC04x7ck8RMjpu_VpZBkYx4';
