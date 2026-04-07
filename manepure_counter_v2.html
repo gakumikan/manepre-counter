@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MCP / みんなで1000万</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -280,18 +279,6 @@
     font-size: 13px;
     padding: 20px;
   }
-
-  .realtime-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #ccc;
-    margin-left: 6px;
-    vertical-align: middle;
-    transition: background 0.3s;
-  }
-  .realtime-dot.connected { background: #4cd964; }
 </style>
 </head>
 <body>
@@ -300,7 +287,7 @@
   <div class="header">
     <div class="eyebrow">Monetize The Code Premium</div>
     <h1>マネプレ 1000万チャレンジ</h1>
-    <div class="sub">みんなで登る、団体戦 <span class="realtime-dot" id="realtimeDot" title="リアルタイム接続状態"></span></div>
+    <div class="sub">みんなで登る、団体戦</div>
     <div class="sub" style="margin-top:6px; color:#d97db5; font-size:11px; letter-spacing:0.08em;">GMS：金額の多寡は関係ない</div>
     <div class="sub" style="margin-top:8px; color:#c09ab0; font-size:10px; letter-spacing:0.03em; line-height:1.7;">※厳密には売上とはサービスを提供したら立ちますが、<br>マネプレでは「成約金額」を入れることとします。</div>
   </div>
@@ -355,29 +342,9 @@
 </div>
 
 <script>
-// デバッグ用
-alert('SCRIPT START: supabase=' + typeof window.supabase);
-window.onerror = function(msg, src, line) {
-  alert('JS ERROR: ' + msg + ' line:' + line);
-};
-window.addEventListener('unhandledrejection', function(e) {
-  alert('PROMISE ERROR: ' + e.reason);
-});
-
-// =============================================
-// Supabase 設定
-// =============================================
-const SUPABASE_URL = 'https://yfixzwuwmoiysgtqwjcl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmaXh6d3V3bW9peXNndHF3amNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTI4NDksImV4cCI6MjA5MDk4ODg0OX0.p8SSO1bO7fvDnbtwbscqeC04x7ck8RMjpu_VpZBkYx4';
-
-alert('BEFORE createClient');
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-alert('AFTER createClient OK');
 const GOAL = 10000000;
+const STORAGE_KEY = 'manepure_entries_v2';
 
-// =============================================
-// ユーティリティ
-// =============================================
 function formatDate(iso) {
   const d = new Date(iso);
   const mo = d.getMonth() + 1;
@@ -397,28 +364,17 @@ function escHtml(str) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// =============================================
-// Supabase CRUD
-// =============================================
 async function loadEntries() {
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .order('date', { ascending: false });
-  if (error) throw error;
-  return data || [];
+  try {
+    const result = await window.storage.get(STORAGE_KEY, true);
+    return result ? JSON.parse(result.value) : [];
+  } catch (e) { return []; }
 }
 
-async function insertEntry(entry) {
-  const { error } = await supabase
-    .from('entries')
-    .insert([entry]);
-  if (error) throw error;
+async function saveEntries(entries) {
+  await window.storage.set(STORAGE_KEY, JSON.stringify(entries), true);
 }
 
-// =============================================
-// UI 更新
-// =============================================
 function updateDatalist(entries) {
   const names = [...new Set(entries.map(e => e.name))];
   const contents = [...new Set(entries.map(e => e.content))];
@@ -447,10 +403,14 @@ function updateUI(entries) {
     return;
   }
 
+  const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
   listEl.innerHTML = '';
   const ul = document.createElement('ul');
   ul.className = 'history-list';
-  entries.forEach(e => {
+  sorted.forEach((e, i) => {
+    const originalIndex = entries.findIndex(
+      entry => entry.date === e.date && entry.name === e.name && entry.amount === e.amount
+    );
     const li = document.createElement('li');
     li.className = 'history-item';
     li.innerHTML = `
@@ -461,7 +421,7 @@ function updateUI(entries) {
         <div class="history-date">${formatDate(e.date)}</div>
       </div>
       <div class="history-amount">+¥${Number(e.amount).toLocaleString()}</div>
-      <button class="delete-btn" onclick="deleteEntry('${escHtml(e.id)}')">削除</button>
+      <button class="delete-btn" onclick="deleteEntry('${e.date}')">削除</button>
     `;
     ul.appendChild(li);
   });
@@ -475,9 +435,6 @@ function showMsg(text, type) {
   setTimeout(() => { el.className = 'msg'; }, 3000);
 }
 
-// =============================================
-// 追加 / 削除
-// =============================================
 async function addEntry() {
   const name = document.getElementById('inputName').value.trim();
   const content = document.getElementById('inputContent').value.trim();
@@ -492,16 +449,15 @@ async function addEntry() {
   btn.textContent = '追加中...';
 
   try {
-    await insertEntry({ name, content, amount, date: new Date().toISOString() });
+    const entries = await loadEntries();
+    entries.push({ name, content, amount, date: new Date().toISOString() });
+    await saveEntries(entries);
+    updateUI(entries);
     document.getElementById('inputName').value = '';
     document.getElementById('inputContent').value = '';
     document.getElementById('inputAmount').value = '';
     showMsg('追加しました！', 'success');
-    // リアルタイム購読が UI を自動更新するが、念のため即時反映
-    const entries = await loadEntries();
-    updateUI(entries);
   } catch (e) {
-    console.error(e);
     showMsg('エラーが発生しました', 'error');
   } finally {
     btn.disabled = false;
@@ -509,57 +465,27 @@ async function addEntry() {
   }
 }
 
-async function deleteEntry(id) {
+async function deleteEntry(date) {
   if (!confirm('この記録を削除しますか？')) return;
   try {
-    const { error } = await supabase
-      .from('entries')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
     const entries = await loadEntries();
-    updateUI(entries);
+    const updated = entries.filter(e => e.date !== date);
+    await saveEntries(updated);
+    updateUI(updated);
   } catch (e) {
-    console.error(e);
     alert('削除に失敗しました');
   }
 }
 
-// =============================================
-// リアルタイム購読（他ユーザーの更新を自動反映）
-// =============================================
-function setupRealtime() {
-  const dot = document.getElementById('realtimeDot');
-  supabase
-    .channel('entries-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'entries' }, async () => {
-      const entries = await loadEntries();
-      updateUI(entries);
-    })
-    .subscribe(status => {
-      dot.classList.toggle('connected', status === 'SUBSCRIBED');
-    });
+async function refresh() {
+  const entries = await loadEntries();
+  updateUI(entries);
 }
 
-// =============================================
-// 初期化
-// =============================================
-const dbg = (msg) => { document.getElementById('historyList').innerHTML = '<div style="color:red;padding:10px;">' + msg + '</div>'; };
-dbg('STEP1: script started');
-try {
-  dbg('STEP2: creating client... supabase type=' + typeof window.supabase + ', createClient=' + typeof window.supabase?.createClient);
-} catch(e) { dbg('STEP2 ERR: ' + e.message); }
-
 (async () => {
-  try {
-    dbg('STEP3: calling loadEntries...');
-    const entries = await loadEntries();
-    dbg('STEP4: got ' + entries.length + ' entries, calling updateUI...');
-    updateUI(entries);
-  } catch (e) {
-    dbg('STEP5 ERROR: ' + e.message + ' | ' + e.stack?.substring(0, 200));
-  }
-  setupRealtime();
+  const entries = await loadEntries();
+  updateUI(entries);
+  setInterval(refresh, 30000);
 })();
 </script>
 </body>
