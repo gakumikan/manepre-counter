@@ -292,6 +292,37 @@
     transition: background 0.3s;
   }
   .realtime-dot.connected { background: #4cd964; }
+
+  /* ナミア（マスコット） */
+  .namia-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 8px 0 18px;
+  }
+  .namia {
+    width: 140px;
+    height: 140px;
+    animation: namiaFloat 3.6s ease-in-out infinite;
+    filter: drop-shadow(0 6px 14px rgba(214,63,140,0.25));
+  }
+  .namia-name {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: #d63f8c;
+  }
+  .namia-tag {
+    font-size: 10px;
+    color: #c09ab0;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+  }
+  @keyframes namiaFloat {
+    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+    50%      { transform: translateY(-6px) rotate(1.5deg); }
+  }
 </style>
 </head>
 <body>
@@ -303,6 +334,87 @@
     <div class="sub">みんなで登る、団体戦 <span class="realtime-dot" id="realtimeDot" title="リアルタイム接続状態"></span></div>
     <div class="sub" style="margin-top:6px; color:#d97db5; font-size:11px; letter-spacing:0.08em;">GMS：金額の多寡は関係ない</div>
     <div class="sub" style="margin-top:8px; color:#c09ab0; font-size:10px; letter-spacing:0.03em; line-height:1.7;">※厳密には売上とはサービスを提供したら立ちますが、<br>マネプレでは「成約金額」を入れることとします。</div>
+  </div>
+
+  <div class="namia-wrap" aria-label="マスコットキャラクター ナミア">
+    <svg class="namia" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="namiaTitle">
+      <title id="namiaTitle">ナミア</title>
+      <defs>
+        <linearGradient id="namiaBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fde3ef"/>
+          <stop offset="55%" stop-color="#f7c5dc"/>
+          <stop offset="100%" stop-color="#e8a4c4"/>
+        </linearGradient>
+        <linearGradient id="namiaCheek" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ffb6d2"/>
+          <stop offset="100%" stop-color="#ff7eb0"/>
+        </linearGradient>
+        <radialGradient id="namiaShine" cx="0.3" cy="0.3" r="0.7">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+
+      <!-- 体（しずく＋波の形） -->
+      <path d="M100 18
+               C 60 50, 32 90, 32 122
+               C 32 162, 62 188, 100 188
+               C 138 188, 168 162, 168 122
+               C 168 90, 140 50, 100 18 Z"
+            fill="url(#namiaBody)" stroke="#d97db5" stroke-width="2.5"/>
+
+      <!-- 波の前髪 -->
+      <path d="M44 92
+               Q 60 70, 76 92
+               T 108 92
+               T 140 92
+               T 156 92
+               L 156 110
+               Q 140 124, 124 110
+               T 92 110
+               T 60 110
+               T 44 110 Z"
+            fill="#d97db5" opacity="0.95"/>
+      <path d="M48 96
+               Q 62 80, 76 96
+               T 108 96
+               T 140 96
+               L 140 100
+               Q 124 112, 108 100
+               T 76 100
+               T 48 100 Z"
+            fill="#c45f9a" opacity="0.55"/>
+
+      <!-- ハイライト -->
+      <ellipse cx="74" cy="60" rx="22" ry="14" fill="url(#namiaShine)"/>
+
+      <!-- ほっぺ -->
+      <circle cx="62"  cy="138" r="9" fill="url(#namiaCheek)" opacity="0.85"/>
+      <circle cx="138" cy="138" r="9" fill="url(#namiaCheek)" opacity="0.85"/>
+
+      <!-- 目 -->
+      <g fill="#2e1a26">
+        <ellipse cx="78"  cy="128" rx="5.5" ry="7"/>
+        <ellipse cx="122" cy="128" rx="5.5" ry="7"/>
+      </g>
+      <g fill="#ffffff">
+        <circle cx="80"  cy="125" r="1.8"/>
+        <circle cx="124" cy="125" r="1.8"/>
+      </g>
+
+      <!-- 口 -->
+      <path d="M92 150 Q 100 158, 108 150"
+            fill="none" stroke="#2e1a26" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M96 152 Q 100 156, 104 152 Z" fill="#ff7eb0"/>
+
+      <!-- しずく型のお守り（首） -->
+      <path d="M100 176
+               C 95 170, 95 164, 100 160
+               C 105 164, 105 170, 100 176 Z"
+            fill="#fff" stroke="#d63f8c" stroke-width="1.5"/>
+    </svg>
+    <div class="namia-name">NAMIA / ナミア</div>
+    <div class="namia-tag">マネプレ公式マスコット</div>
   </div>
 
   <div class="counter-card">
